@@ -1,46 +1,70 @@
-import aiogram
 import asyncio
-from aiogram import Bot, Dispatcher
-from aiogram.filters import CommandStart
-from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
-from aiogram.utils.keyboard import InlineKeyboardBuilder
-from aiogram import Router, F
+from aiogram import Bot, Dispatcher, F
+from aiogram import Router
 from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import StatesGroup, State
+from models import StudentInfo
+from views import *
+
 
 bot = Bot(token='7371152325:AAFCtleaVO1iCbcoHcmyVBV1DiOnMelazDE')
-
 dp = Dispatcher()
 router = Router()
 
 
-class Form(StatesGroup):
-    waiting_for_name = State()
-
-
 @router.message(F.text == "/start")
 async def cmd_start(message: Message, state: FSMContext):
-    start_message = open('messages/start_message.txt')
-    keyboard_builder = InlineKeyboardBuilder()
-    keyboard_builder.add(
-        InlineKeyboardButton(text="ЖАТАХАНА ҮШІН", url="https://ru.wikipedia.org/wiki/%D0%A0%D0%B5%D0%BA%D1%83%D1%80%D1%81%D0%B8%D1%8F"),
-        InlineKeyboardButton(text="ТАМАҚТАНУ ҮШІН", url="https://ru.wikipedia.org/wiki/%D0%A0%D0%B5%D0%BA%D1%83%D1%80%D1%81%D0%B8%D1%8F"),
-    )
-    reply_markup=keyboard_builder.as_markup()
-    await message.answer(start_message.read(), reply_markup=reply_markup)
-
-    await message.answer('📃 Толық аты жөніңізді жазыңыз:')
-    await state.set_state(Form.waiting_for_name)
+    await message.answer(start().read(), reply_markup=payment_button())
+    await message.answer('Напишите полное имя: ')
+    await state.set_state(StudentInfo.waiting_for_full_name)
 
 
-@router.message(Form.waiting_for_name)
-async def process_name(message: Message, state: FSMContext):
-    # Get the user's name from their response
+@router.message(StudentInfo.waiting_for_full_name)
+async def process_full_name(message: Message, state: FSMContext):
     user_name = message.text
-    # Reply with a greeting message
-    await message.answer(f"Nice to meet you, {user_name}!")
-    # Clear the state
+    print(f"Student id: {message.chat.id} \n Student full_name: {user_name}\n")
+    await message.answer("Напишите свой город: ")
+    await state.set_state(StudentInfo.waiting_for_city)
+
+
+@router.message(StudentInfo.waiting_for_city)
+async def process_city(message: Message, state: FSMContext):
+    city = message.text
+    print(f"Student id: {message.chat.id} \n Student city: {city}\n")
+
+    await message.answer("Напишите свой курс")
+    await state.set_state(StudentInfo.waiting_for_course)
+
+
+@router.message(StudentInfo.waiting_for_course)
+async def process_course(message: Message, state: FSMContext):
+    course = message.text
+    print(f"Student id: {message.chat.id} \n Student course: {course}\n")
+
+    await message.answer("Напишите свою специальность")
+    await state.set_state(StudentInfo.waiting_for_speciality)
+
+
+@router.message(StudentInfo.waiting_for_speciality)
+async def process_speciality(message: Message, state: FSMContext):
+    speciality = message.text
+    print(f"Student id: {message.chat.id} \n Student speciality: {speciality}\n")
+
+    await message.answer("Выберите пол", reply_markup=gender_button())
+    await state.set_state(StudentInfo.waiting_for_gender)
+
     await state.clear()
+
+
+@dp.callback_query(F.data == 'option_1')
+async def handle_1(callback: CallbackQuery):
+    choice = "Мужчина"
+    print(f"Student id: {callback.message.chat.id} \n Student gender: {choice}\n")
+
+
+@dp.callback_query(F.data == 'option_2')
+async def handle_2(callback: CallbackQuery):
+    choice = "Женщина"
+    print(f"Student id: {callback.message.chat.id} \nStudent gender: {choice}")
 
 
 dp.include_router(router)
