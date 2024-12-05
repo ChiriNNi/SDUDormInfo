@@ -1,14 +1,21 @@
 from aiogram.types import (ReplyKeyboardMarkup, KeyboardButton,
                            InlineKeyboardButton, InlineKeyboardMarkup)
 from aiogram.utils.keyboard import InlineKeyboardBuilder
+from sqlalchemy import select, or_
 
-from app.database.requests import get_faculties, get_specialty, get_room
+from app.database.models import Room, Specialty
+from app.database.requests import async_session, get_faculties, get_specialty, get_room, get_booked_count
 
 main = ReplyKeyboardMarkup(keyboard=[
     [KeyboardButton(text='Заполнить анкету 📝'),
     KeyboardButton(text='Информция о общежитии 🏠')]
 ],
                            resize_keyboard=True)
+
+book = ReplyKeyboardMarkup(keyboard=[[
+    KeyboardButton(text="Забронировать"),
+    KeyboardButton(text="Вернуться назад")]
+], resize_keyboard=True)
 
 def gender_keyboard():
     builder = InlineKeyboardBuilder()
@@ -98,13 +105,11 @@ async def specialty_keyboard(faculty_id):
     # }
 
     specialities = await get_specialty(faculty_id);
-
-    # Получаем список специальностей для выбранного факультета
-    # faculty_specialties = specialties.get(faculty_codes.get(faculty_code), [])
+    print(specialities)
 
     # Добавляем кнопки для каждой специальности
     for specialty in specialities:
-        builder.add(InlineKeyboardButton(text=specialty.name, callback_data="specialty_"))
+        builder.add(InlineKeyboardButton(text=specialty.name, callback_data=f'specialty_{specialty.id}'))
 
     builder.add(InlineKeyboardButton(text="Назад", callback_data="back"))
 
@@ -113,10 +118,49 @@ async def specialty_keyboard(faculty_id):
     # Возвращаем клавиатуру
     return builder.as_markup()
 
-async def room_keyboard():
+async def room_keyboard(specialty_id: int, gender: str, page: int = 1, page_size: int = 10) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-    rooms = await get_room();
-    for room in rooms:
+
+    async with async_session() as session:
+        stmt = (
+            select(Room)
+            .join(Room.specialties)
+            .where(Specialty.id == specialty_id)
+        )
+
+        if gender == 'male':
+            stmt = stmt.where(
+                or_(
+                    Room.number.like("С%"),
+                    Room.number.like("D%")
+                )
+            )
+        else:
+            stmt = stmt.where(
+                or_(
+                    Room.number.like("A%"),
+                    Room.number.like("B%")
+                )
+            )
+
+        result = await session.execute(stmt)
+        rooms = result.scalars().all()
+
+    # Пагинация
+    total_rooms = len(rooms)
+    start_index = (page - 1) * page_size
+    end_index = start_index + page_size
+    rooms_on_page = rooms[start_index:end_index]
+
+    for room in rooms_on_page:
         builder.add(InlineKeyboardButton(text=room.number, callback_data=f'room_{room.number}'))
-    builder.adjust(1)
+
+    # Добавляем кнопки пагинации
+    if page > 1:
+        builder.add(InlineKeyboardButton(text="⬅ Назад", callback_data=f'pagination_{page - 1}'))
+    if end_index < total_rooms:
+        builder.add(InlineKeyboardButton(text="➡ Далее", callback_data=f'pagination_{page + 1}'))
+
+    builder.adjust(2)  # Располагаем кнопки вертикально
     return builder.as_markup()
+
