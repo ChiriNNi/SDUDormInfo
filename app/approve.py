@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from app.database.models import User, async_session, Room
 
-TIME_LIMIT = timedelta(minutes=1)
+TIME_LIMIT = timedelta(minutes=30)
 
 async def update_payment_status(phone_number: int, payment_accommodation: str, payment_food: str):
     async with async_session() as session:
