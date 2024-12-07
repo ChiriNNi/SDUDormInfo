@@ -8,7 +8,7 @@ from app.database.requests import async_session, get_faculties, get_specialty, g
 
 main = ReplyKeyboardMarkup(keyboard=[
     [KeyboardButton(text='Заполнить анкету 📝'),
-    KeyboardButton(text='Информция о общежитии 🏠')]
+    KeyboardButton(text='Информация о общежитии 🏠')]
 ],
                            resize_keyboard=True)
 
@@ -17,6 +17,68 @@ book = ReplyKeyboardMarkup(keyboard=[[
     KeyboardButton(text="Вернуться назад")]
 ], resize_keyboard=True)
 
+
+def sleep_keyboard():
+    builder = InlineKeyboardBuilder()
+
+    button1 = InlineKeyboardButton(text="До 22:00", callback_data="sleep_До 22:00")
+    button2 = InlineKeyboardButton(text="22:00-00:00", callback_data="sleep_22:00-00:00")
+    button3 = InlineKeyboardButton(text="После 00:00", callback_data="sleep_После 00:00")
+
+    builder.add(button1, button2, button3)
+    builder.adjust(1)
+
+    return builder.as_markup()
+
+def wake_keyboard():
+    builder = InlineKeyboardBuilder()
+
+    button1 = InlineKeyboardButton(text="До 6:00", callback_data="wake_До 6:00")
+    button2 = InlineKeyboardButton(text="6:00–8:00", callback_data="wake_6:00–8:00")
+    button3 = InlineKeyboardButton(text="После 8:00", callback_data="wake_После 8:00")
+
+    builder.add(button1, button2, button3)
+    builder.adjust(1)
+
+    return builder.as_markup()
+
+def noise_keyboard():
+    builder = InlineKeyboardBuilder()
+
+    button1 = InlineKeyboardButton(text="Мне важна полная тишина.", callback_data="silence_Мне важна полная тишина.")
+    button2 = InlineKeyboardButton(text="Легкий шум не мешает.", callback_data="silence_Легкий шум не мешает.")
+    button3 = InlineKeyboardButton(text="Я спокойно отношусь к шуму.", callback_data="silence_Я спокойно отношусь к шуму.")
+
+    builder.add(button1, button2, button3)
+    builder.adjust(1)
+
+    return builder.as_markup()
+
+def order_keyboard():
+    builder = InlineKeyboardBuilder()
+
+    button1 = InlineKeyboardButton(text="Очень важно,\n чтобы все было чисто.", callback_data="order_Очень важно.")
+    button2 = InlineKeyboardButton(text="Я предпочитаю порядок,\n но могу мириться с беспорядком.", callback_data="order_Я предпочитаю порядок.")
+    button3 = InlineKeyboardButton(text="Беспорядок меня не беспокоит.", callback_data="order_Беспорядок меня не беспокоит.")
+
+    builder.add(button1, button2, button3)
+    builder.adjust(1)
+
+    return builder.as_markup()
+
+def religion_keyboard():
+    builder = InlineKeyboardBuilder()
+
+    button1 = InlineKeyboardButton(text="Очень важно.", callback_data="religion_Очень важно.")
+    button2 = InlineKeyboardButton(text="Было бы хорошо, но не обязательно.", callback_data="religion_Было бы хорошо.")
+    button3 = InlineKeyboardButton(text="Мне все равно.", callback_data="religion_Мне все равно.")
+
+    builder.add(button1, button2, button3)
+    builder.adjust(1)
+
+    return builder.as_markup()
+
+
 def gender_keyboard():
     builder = InlineKeyboardBuilder()
 
@@ -24,7 +86,7 @@ def gender_keyboard():
     button_female = InlineKeyboardButton(text="Женский 👩", callback_data="gender_female")
 
     builder.add(button_male, button_female)
-    builder.adjust(2)
+    builder.adjust(1)
 
     return builder.as_markup()
 
@@ -105,7 +167,6 @@ async def specialty_keyboard(faculty_id):
     # }
 
     specialities = await get_specialty(faculty_id);
-    print(specialities)
 
     # Добавляем кнопки для каждой специальности
     for specialty in specialities:
@@ -117,6 +178,7 @@ async def specialty_keyboard(faculty_id):
 
     # Возвращаем клавиатуру
     return builder.as_markup()
+
 
 async def room_keyboard(specialty_id: int, gender: str, page: int = 1, page_size: int = 10) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
@@ -153,7 +215,7 @@ async def room_keyboard(specialty_id: int, gender: str, page: int = 1, page_size
     rooms_on_page = rooms[start_index:end_index]
 
     for room in rooms_on_page:
-        builder.add(InlineKeyboardButton(text=room.number, callback_data=f'room_{room.number}'))
+        builder.add(InlineKeyboardButton(text=f"{room.number} {room.booked_count}/4 ", callback_data=f'room_{room.number}'))
 
     # Добавляем кнопки пагинации
     if page > 1:
@@ -164,3 +226,15 @@ async def room_keyboard(specialty_id: int, gender: str, page: int = 1, page_size
     builder.adjust(2)  # Располагаем кнопки вертикально
     return builder.as_markup()
 
+payment_keyboard = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [InlineKeyboardButton(text="Оплатить за проживание", callback_data="pay_accommodation", url="https://ru.wikipedia.org/wiki/%D0%A0%D0%B5%D0%BA%D1%83%D1%80%D1%81%D0%B8%D1%8F")]
+    ]
+)
+
+# Пример клавиатуры для оплаты за еду
+food_payment_keyboard = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [InlineKeyboardButton(text="Оплатить за еду", callback_data="pay_food", url="https://ru.wikipedia.org/wiki/%D0%A0%D0%B5%D0%BA%D1%83%D1%80%D1%81%D0%B8%D1%8F")]
+    ]
+)

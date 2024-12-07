@@ -1,5 +1,9 @@
+import asyncio
+from datetime import datetime
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
+
 from app.database.models import async_session, Room, User, RoomSpecialty
 from app.database.models import Faculty, Specialty
 from sqlalchemy import select
@@ -8,10 +12,18 @@ async def get_faculties():
     async with async_session() as session:
         return await session.scalars(select(Faculty))
 
+async def get_faculty(faculty_id):
+    async with async_session() as session:
+        result =  await session.scalars(select(Faculty).where(Faculty.id == faculty_id))
+        return result.first() if result else None
 async def get_specialty(faculty_id):
     async with async_session() as session:
         return await session.scalars(select(Specialty).where(Specialty.faculty == faculty_id))
 
+async def get_specialty_one(specialty_id):
+    async with async_session() as session:
+        result = await session.scalars(select(Specialty).where(Specialty.id == specialty_id))
+        return result.first() if result else None
 async def get_room():
     async with async_session() as session:
         return await session.scalars(select(Room).where(Room.booked_count < 4))
@@ -42,13 +54,21 @@ async def get_roommates(room_number):
         # Make sure users are loaded before iterating
         if room.users:
             # Form the student list
-            student_list = "Список студентов в комнате:\n"
-
+            student_list = []
+            count = 0
             for user in room.users:
-                student_list += f"Name: {user.name}\nSurname: {user.surname}\n"
+                count += 1
+                student_list.append( f"""*Руммейт {count}*
+*Время сна*: {user.sleep_mode}\n
+*Подъём*: {user.wake_up_time}\n
+*Шум вечером*: {user.noise}\n
+*Порядок в комнате*: {user.sleep_mode}\n
+*Религиозные руммейты*: {user.religion}\n
+*Качество будущих руммейтов*: {user.roommate_traits}\n
+*Пожелания или требования руммейту*: {user.wishes}\n""")
 
         else:
-            student_list = "Нет студентов в этой комнате."
+            student_list = []
         return student_list
 
 async def get_booked_count(room_number):
@@ -73,7 +93,6 @@ async def post_room(user, room_number):
 
         await session.commit()
 
-
 async def post_user(user):
     async with async_session() as session:
         # Create a User instance with data from the user dictionary
@@ -84,9 +103,16 @@ async def post_user(user):
             gender=user["gender"],
             faculty=user["faculty"],
             speciality=user["specialty"],
-            course=user["course"],
+            phone_number=user["phone_number"],
             city=user["city"],
-            room_id=room_id
+            room_id=room_id,
+            sleep_mode=user["sleep_mode"],
+            wake_up_time=user["wake_up_time"],
+            noise=user["noise_at_night"],
+            order_room=user["order_room"],
+            religion=user["religion"],
+            roommate_traits=user["roommate_traits"],
+            wishes=user["wishes"],
         )
 
         session.add(new_user)
@@ -94,7 +120,5 @@ async def post_user(user):
             await post_room(new_user, user["room"])
         # Commit the session to save the new user to the database
         await session.commit()
-
-
 
         return new_user

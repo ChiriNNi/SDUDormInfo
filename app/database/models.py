@@ -1,4 +1,6 @@
-from sqlalchemy import BigInteger, String, ForeignKey, Integer
+from datetime import datetime
+
+from sqlalchemy import BigInteger, String, ForeignKey, Integer, Boolean, DateTime
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine
 
@@ -48,16 +50,32 @@ class User(Base):
     __tablename__ = 'users'
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    created_at = mapped_column(DateTime, default=datetime.utcnow)
     tg_id = mapped_column(BigInteger, default=0)
     surname = mapped_column(String)
     name = mapped_column(String)
     gender = mapped_column(String)
     faculty = mapped_column(ForeignKey('faculties.id'))
     speciality = mapped_column(ForeignKey('specialities.id'))
-    course = mapped_column(Integer)
+    phone_number = mapped_column(Integer, unique=True)
     city = mapped_column(String)
     room_id = mapped_column(Integer, ForeignKey('rooms.id'))
     room = relationship("Room", back_populates="users")
+
+    # Информация о студенте
+    sleep_mode = mapped_column(String)
+    wake_up_time = mapped_column(String)
+    noise = mapped_column(String)
+    order_room = mapped_column(String)
+    religion = mapped_column(String)
+    roommate_traits = mapped_column(String)
+    wishes = mapped_column(String)
+
+
+    # Оплата
+    payment_accommodation = mapped_column(String, default=None)
+    payment_food = mapped_column(String, default=None)
+    is_payment_approved = mapped_column(Integer, default=0)
 
 async def async_main():
     async with engine.begin() as conn:
