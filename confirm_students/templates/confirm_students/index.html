@@ -1,0 +1,40 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Students</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'confirm_students/styles.css' %}">
+</head>
+<body>
+        <div class="student-cards">
+
+        {% for student in students %}
+            <div class="card">
+                <div class="card-header">
+                    <h5>{{ student.surname }} {{ student.name }}</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Пол:</strong> {{ student.gender }}</p>
+                    <p><strong>Номер комнаты:</strong> {{ student.room_id }}</p>
+                    <p><strong>Номер телефона:</strong> {{ student.phone_number }}</p>
+
+                    <p><a href="{% url 'confirm_students:view_accommodation_pdf' file_name=student.payment_accommodation %}" ><strong>Оплата за проживание:</strong> {{ student.registration_date }}</a></p>
+                    <p><a href="{% url 'confirm_students:view_accommodation_pdf' file_name=student.payment_food %}" ><strong>Оплата за еду:</strong> {{ student.registration_date }}</a></p>
+                    <form method="post" action="{% url 'confirm_students:get_students' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="telegram_id" value="{{ student.telegram_id }}">  <!-- Add telegram_id here -->
+                        <button class="btn btn-success" type="submit" name="action" value="accept">Accept</button>
+                        <button class="btn btn-danger" type="submit" name="action" value="decline" >Decline</button>
+                    </form>
+
+                </div>
+            </div>
+        {% empty %}
+            <p>Нет студентов для отображения.</p>
+        {% endfor %}
+    </div>
+</body>
+</html>
